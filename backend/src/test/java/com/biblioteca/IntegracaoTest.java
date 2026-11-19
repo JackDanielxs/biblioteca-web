@@ -36,6 +36,27 @@ class IntegracaoTest {
     }
 
     @Test
+    @DisplayName("Deve vincular livro a autor")
+    void deveVincularLivroAAutor() throws Exception {
+        Long autorId = criarAutor("Machado de Assis");
+
+        String livroJson = "{\"titulo\":\"Dom Casmurro\",\"isbn\":\"978-8535910667\","
+                + "\"anoPublicacao\":1899,\"genero\":\"Romance\",\"autor\":{\"id\":" + autorId + "}}";
+
+        mockMvc.perform(post("/api/livros")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(livroJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.titulo").value("Dom Casmurro"))
+                .andExpect(jsonPath("$.autor.id").value(autorId))
+                .andExpect(jsonPath("$.autor.nome").value("Machado de Assis"));
+
+        mockMvc.perform(get("/api/livros/autor/" + autorId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
     @DisplayName("(extra) Deve executar fluxo completo de autor: criar, buscar, atualizar, deletar")
     void deveExecutarFluxoCompletoAutor() throws Exception {
         Long id = criarAutor("Clarice");
@@ -55,5 +76,18 @@ class IntegracaoTest {
 
         mockMvc.perform(get("/api/autores/" + id))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("(extra) Excluir autor com livros deve retornar 409")
+    void deveRetornar409AoExcluirAutorComLivros() throws Exception {
+        Long autorId = criarAutor("José de Alencar");
+        mockMvc.perform(post("/api/livros")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"titulo\":\"Iracema\",\"autor\":{\"id\":" + autorId + "}}"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(delete("/api/autores/" + autorId))
+                .andExpect(status().isConflict());
     }
 }
