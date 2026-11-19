@@ -3,6 +3,7 @@ import App from './App';
 
 jest.mock('./services/api', () => ({
   autorService: { listar: () => Promise.resolve({ data: [] }) },
+  livroService: { listar: () => Promise.resolve({ data: [] }) },
 }));
 
 test('renderiza o menu da Biblioteca Web', async () => {
